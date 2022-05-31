@@ -1,0 +1,6 @@
+name: KcankaMiniony
+version: '${project.version}'
+main: io.github.reconsolidated.kcankaminiony.KcankaMiniony
+api-version: 1.18
+softdepend: [ ItemProvider ]
+authors: [ Kcanka ]
