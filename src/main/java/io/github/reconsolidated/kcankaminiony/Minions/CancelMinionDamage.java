@@ -7,6 +7,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.persistence.PersistentDataType;
 
+import static io.github.reconsolidated.kcankaminiony.Minions.MinionManager.minionTypeKey;
+
 public class CancelMinionDamage implements Listener {
     private final KcankaMiniony plugin;
 
@@ -17,7 +19,7 @@ public class CancelMinionDamage implements Listener {
 
     @EventHandler
     public void onMinionDamage(EntityDamageEvent event) {
-        if (event.getEntity().getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING) != null) {
+        if (event.getEntity().getPersistentDataContainer().get(minionTypeKey, PersistentDataType.STRING) != null) {
             event.setCancelled(true);
         }
     }

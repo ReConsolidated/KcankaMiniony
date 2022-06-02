@@ -22,6 +22,7 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 
+import static io.github.reconsolidated.kcankaminiony.Minions.MinionManager.*;
 import static io.github.reconsolidated.kcankaminiony.Minions.MinionPhase.BREAKING;
 import static io.github.reconsolidated.kcankaminiony.Minions.MinionPhase.PLACING;
 
@@ -68,7 +69,7 @@ public class Minion {
         this.plugin = plugin;
         this.location = minion.getLocation().toCenterLocation();
         this.blocks = new ArrayList<>();
-        String type = minion.getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING);
+        String type = minion.getPersistentDataContainer().get(minionTypeKey, PersistentDataType.STRING);
         if (type.equalsIgnoreCase("glowstone_dust") || type.equalsIgnoreCase("titan_ash")) {
             item = plugin.getItemProvider().getItem("titan_ash", "titan_ash");
         } else {
@@ -76,10 +77,10 @@ public class Minion {
         }
         this.displayName = "Minion Tytanów";
 
-        this.jobCooldown = minion.getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_cooldown"), PersistentDataType.INTEGER);
-        this.level = minion.getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_level"), PersistentDataType.INTEGER);
-        this.breaksRequiredForDrop = minion.getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_breaks_required"), PersistentDataType.INTEGER);
-        this.ownerName = minion.getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_owner"), PersistentDataType.STRING);
+        this.jobCooldown = minion.getPersistentDataContainer().get(minionCooldownKey, PersistentDataType.INTEGER);
+        this.level = minion.getPersistentDataContainer().get(minionLevelKey, PersistentDataType.INTEGER);
+        this.breaksRequiredForDrop = minion.getPersistentDataContainer().get(minionBreaksRequiredKey, PersistentDataType.INTEGER);
+        this.ownerName = minion.getPersistentDataContainer().get(minionOwnerKey, PersistentDataType.STRING);
 
 
         setupBlocks();
@@ -88,7 +89,7 @@ public class Minion {
     public Minion(KcankaMiniony plugin, Location location, ItemStack item, String ownerName) {
         this.plugin = plugin;
         this.location = location.toCenterLocation();
-        String type = item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING);
+        String type = item.getItemMeta().getPersistentDataContainer().get(minionTypeKey, PersistentDataType.STRING);
         if (type.equalsIgnoreCase("titan_ash") || type.equalsIgnoreCase("glowstone_dust")) {
             this.item = plugin.getItemProvider().getItem("titan_ash", "titan_ash");
         } else {
@@ -96,9 +97,9 @@ public class Minion {
         }
         this.displayName = ChatColor.translateAlternateColorCodes('&', "&8[&d⛏&8] &bMinion Tytanów");
 
-        this.jobCooldown = item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_cooldown"), PersistentDataType.INTEGER);
-        this.level = item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_level"), PersistentDataType.INTEGER);
-        this.breaksRequiredForDrop = item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_breaks_required"), PersistentDataType.INTEGER);
+        this.jobCooldown = item.getItemMeta().getPersistentDataContainer().get(minionCooldownKey, PersistentDataType.INTEGER);
+        this.level = item.getItemMeta().getPersistentDataContainer().get(minionLevelKey, PersistentDataType.INTEGER);
+        this.breaksRequiredForDrop = item.getItemMeta().getPersistentDataContainer().get(minionBreaksRequiredKey, PersistentDataType.INTEGER);
         this.ownerName = ownerName;
         this.blocks = new ArrayList<>();
         setupBlocks();
@@ -126,11 +127,11 @@ public class Minion {
     }
 
     private void saveMinion() {
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING, plugin.getItemProvider().getItemName(item));
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_cooldown"), PersistentDataType.INTEGER, jobCooldown);
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_level"), PersistentDataType.INTEGER, level);
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_breaks_required"), PersistentDataType.INTEGER, breaksRequiredForDrop);
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_owner"), PersistentDataType.STRING, ownerName);
+        minion.getPersistentDataContainer().set(minionTypeKey, PersistentDataType.STRING, plugin.getItemProvider().getItemName(item));
+        minion.getPersistentDataContainer().set(minionCooldownKey, PersistentDataType.INTEGER, jobCooldown);
+        minion.getPersistentDataContainer().set(minionLevelKey, PersistentDataType.INTEGER, level);
+        minion.getPersistentDataContainer().set(minionBreaksRequiredKey, PersistentDataType.INTEGER, breaksRequiredForDrop);
+        minion.getPersistentDataContainer().set(minionOwnerKey, PersistentDataType.STRING, ownerName);
     }
 
 
@@ -226,9 +227,9 @@ public class Minion {
         minion.getEquipment().setLeggings(getLeatherArmor(Material.LEATHER_LEGGINGS, Color.FUCHSIA));
         minion.getEquipment().setBoots(getLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE));
         minion.getEquipment().setItemInMainHand(getMainhandItem());
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING, item.getType().name());
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_cooldown"), PersistentDataType.INTEGER, jobCooldown);
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_level"), PersistentDataType.INTEGER, level);
+        minion.getPersistentDataContainer().set(minionTypeKey, PersistentDataType.STRING, item.getType().name());
+        minion.getPersistentDataContainer().set(minionCooldownKey, PersistentDataType.INTEGER, jobCooldown);
+        minion.getPersistentDataContainer().set(minionLevelKey, PersistentDataType.INTEGER, level);
 
         plugin.getMinionManager().addMinion(this);
 
@@ -347,9 +348,9 @@ public class Minion {
     }
 
     public int getInventorySize() {
-        Integer result = minion.getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_inventory_size"), PersistentDataType.INTEGER);
+        Integer result = minion.getPersistentDataContainer().get(minionInventorySizeKey, PersistentDataType.INTEGER);
         if (result == null) {
-            minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_inventory_size"), PersistentDataType.INTEGER, 3);
+            minion.getPersistentDataContainer().set(minionInventorySizeKey, PersistentDataType.INTEGER, 3);
             return 3;
         }
         return result;
@@ -357,7 +358,7 @@ public class Minion {
 
 
     public void setInventorySize(int i) {
-        minion.getPersistentDataContainer().set(new NamespacedKey(plugin, "minion_inventory_size"), PersistentDataType.INTEGER, i);
+        minion.getPersistentDataContainer().set(minionInventorySizeKey, PersistentDataType.INTEGER, i);
     }
 
     public ItemStack getItem() {

@@ -4,7 +4,6 @@ import io.github.reconsolidated.kcankaminiony.KcankaMiniony;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -17,10 +16,11 @@ import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,15 +28,30 @@ import java.util.List;
 
 public class MinionManager extends BukkitRunnable implements Listener {
 
+    public static NamespacedKey minionCooldownKey;
+    public static NamespacedKey minionInventorySizeKey;
+    public static NamespacedKey minionLevelKey;
+    public static NamespacedKey minionBreaksRequiredKey;
+    public static NamespacedKey minionOwnerKey;
     private final KcankaMiniony plugin;
     private List<Minion> minions;
-    private final NamespacedKey hasMinionKey;
+    public static NamespacedKey playerMinionCountKey;
+    public static NamespacedKey minionTypeKey;
+
 
     public MinionManager(KcankaMiniony plugin) {
         this.plugin = plugin;
-        hasMinionKey = new NamespacedKey(plugin, "has_minion");
+        playerMinionCountKey = new NamespacedKey(plugin, "player_minion_count");
+        minionOwnerKey = new NamespacedKey(plugin, "minion_owner");
+        minionTypeKey = new NamespacedKey(plugin, "minion_type");
+        minionCooldownKey = new NamespacedKey(plugin, "minion_cooldown");
+        minionInventorySizeKey = new NamespacedKey(plugin, "minion_inventory_size");
+        minionLevelKey = new NamespacedKey(plugin, "minion_level");
+        minionBreaksRequiredKey = new NamespacedKey(plugin, "minion_breaks_required");
+
         minions = new ArrayList<>();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        plugin.getServer().getPluginManager().registerEvents(new DontDropMinionBlocks(), plugin);
         runTaskTimer(plugin, 0L, 1L);
 
         for (World world : Bukkit.getWorlds()) {
@@ -51,17 +66,17 @@ public class MinionManager extends BukkitRunnable implements Listener {
         PersistentDataContainer container = meta.getPersistentDataContainer();
 
         if (material == Material.AMETHYST_BLOCK) {
-            container.set(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING, "titan_ash");
-            container.set(new NamespacedKey(plugin, "minion_cooldown"), PersistentDataType.INTEGER, 200);
-            container.set(new NamespacedKey(plugin, "minion_inventory_size"), PersistentDataType.INTEGER, 3);
-            container.set(new NamespacedKey(plugin, "minion_level"), PersistentDataType.INTEGER, 1);
-            container.set(new NamespacedKey(plugin, "minion_breaks_required"), PersistentDataType.INTEGER, 8640);
+            container.set(minionTypeKey, PersistentDataType.STRING, "titan_ash");
+            container.set(minionCooldownKey, PersistentDataType.INTEGER, 200);
+            container.set(minionInventorySizeKey, PersistentDataType.INTEGER, 3);
+            container.set(minionLevelKey, PersistentDataType.INTEGER, 1);
+            container.set(minionBreaksRequiredKey, PersistentDataType.INTEGER, 8640);
         } else {
-            container.set(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING, "titan_ash");
-            container.set(new NamespacedKey(plugin, "minion_cooldown"), PersistentDataType.INTEGER, 60);
-            container.set(new NamespacedKey(plugin, "minion_inventory_size"), PersistentDataType.INTEGER, 3);
-            container.set(new NamespacedKey(plugin, "minion_level"), PersistentDataType.INTEGER, 1);
-            container.set(new NamespacedKey(plugin, "minion_breaks_required"), PersistentDataType.INTEGER, 1);
+            container.set(minionTypeKey, PersistentDataType.STRING, "titan_ash");
+            container.set(minionCooldownKey, PersistentDataType.INTEGER, 200);
+            container.set(minionInventorySizeKey, PersistentDataType.INTEGER, 3);
+            container.set(minionLevelKey, PersistentDataType.INTEGER, 1);
+            container.set(minionBreaksRequiredKey, PersistentDataType.INTEGER, 8640);
         }
 
         head.setItemMeta(meta);
@@ -76,13 +91,13 @@ public class MinionManager extends BukkitRunnable implements Listener {
     }
 
     public boolean isMinion(Entity entity) {
-        return entity instanceof ArmorStand && entity.getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING) != null;
+        return entity instanceof ArmorStand && entity.getPersistentDataContainer().get(minionTypeKey, PersistentDataType.STRING) != null;
     }
 
     public boolean isMinion(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return false;
-        return item.getItemMeta().getPersistentDataContainer().get(new NamespacedKey(plugin, "minion_type"), PersistentDataType.STRING) != null;
+        return item.getItemMeta().getPersistentDataContainer().get(minionTypeKey, PersistentDataType.STRING) != null;
     }
 
     public Minion getMinion(Entity entity) {
@@ -103,7 +118,11 @@ public class MinionManager extends BukkitRunnable implements Listener {
                 Bukkit.getLogger().warning("Someone clicked on a minion, but it's not loaded! " + event.getRightClicked().getLocation());
                 return;
             }
-            new MinionInventory(plugin, event.getPlayer(), minion, "Minion", 5);
+            if (minion.getOwnerName().equalsIgnoreCase(event.getPlayer().getName())) {
+                new MinionInventory(plugin, event.getPlayer(), minion, "Minion", 5);
+            } else {
+                event.getPlayer().sendMessage(ChatColor.RED + "To nie twój minion!");
+            }
         }
     }
 
@@ -117,27 +136,62 @@ public class MinionManager extends BukkitRunnable implements Listener {
         event.setCancelled(true);
 
         Player player = event.getPlayer();
-        if (!hasMinion(player)) {
+        if (canPlaceMinion(player)) {
             Minion minion = new Minion(plugin, event.getBlockPlaced().getLocation(), item, event.getPlayer().getName());
             if (minion.spawnWithPersistentData(item.getItemMeta().getPersistentDataContainer())) {
                 event.getPlayer().sendMessage(ChatColor.GREEN + "Postawiono miniona.");
+                setMinionCount(player, getMinionCount(player) + 1);
                 item.setAmount(1);
                 event.getPlayer().getInventory().removeItem(item);
             } else {
                 event.getPlayer().sendMessage(ChatColor.RED + "Nie można postawić tu miniona, bloki dookoła muszą być puste!");
             }
         } else {
-            player.sendMessage(ChatColor.RED + "Masz już postawionego miniona!");
+            if (player.getWorld().getName().equals("oneblock_world")) {
+                player.sendMessage(ChatColor.RED + "Osiągnięto już limit minionów!");
+            } else {
+                player.sendMessage(ChatColor.RED + "Nie możesz tego tu zrobić!");
+            }
         }
 
     }
 
-    private boolean hasMinion(Player player) {
-        return player.getPersistentDataContainer().get(hasMinionKey, PersistentDataType.STRING) != null;
+    private boolean canPlaceMinion(Player player) {
+        return player.isOp() ||
+                (player.getWorld().getName().equals("oneblock_world") && getMaxMinions(player) > getMinionCount(player));
     }
 
-    private void setHasMinion(Player player, boolean value) {
+    private int getMinionCount(Player player) {
+        Integer value = player.getPersistentDataContainer().get(playerMinionCountKey, PersistentDataType.INTEGER);
+        if (value == null) {
+            return 0;
+        }
+        return value;
+    }
 
+    private int getMaxMinions(Player player)  {
+        for (PermissionAttachmentInfo perm : player.getEffectivePermissions()) {
+            if (perm.getPermission().startsWith("minions.max.")) {
+                String value = perm.getPermission().split("\\.")[2];
+                if (value.equalsIgnoreCase("*")) {
+                    return 10000;
+                }
+                try {
+                    return Integer.parseInt(value);
+                } catch (NumberFormatException exception) {
+                    Bukkit.getLogger().warning(
+                            "Player %s has incorrect minion permission: %s"
+                                    .formatted(player.getName(), perm.getPermission()));
+                    return 1;
+                }
+            }
+        }
+        return 1;
+
+    }
+
+    private void setMinionCount(Player player, int value) {
+        player.getPersistentDataContainer().set(playerMinionCountKey, PersistentDataType.INTEGER, value);
     }
 
 
@@ -151,11 +205,14 @@ public class MinionManager extends BukkitRunnable implements Listener {
     }
 
     private void loadIfMinion(Entity entity) {
-        if (isMinion(entity)
-                && minions.stream().noneMatch((minion -> minion.getMinion().equals(entity)
-        ))) {
-            minions.add(new Minion(plugin, (ArmorStand) entity));
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (isMinion(entity)
+                    && minions.stream().noneMatch((minion -> minion.getMinion().equals(entity)
+            ))) {
+                minions.add(new Minion(plugin, (ArmorStand) entity));
+            }
+        });
+
     }
 
 
