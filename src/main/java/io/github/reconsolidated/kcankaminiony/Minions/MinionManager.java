@@ -16,7 +16,6 @@ import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -86,7 +85,11 @@ public class MinionManager extends BukkitRunnable implements Listener {
     @Override
     public void run() {
         for (Minion minion : minions) {
-            minion.run();
+            if (minion != null) {
+                minion.run();
+            } else {
+                minions.remove(null);
+            }
         }
     }
 
@@ -118,7 +121,7 @@ public class MinionManager extends BukkitRunnable implements Listener {
                 Bukkit.getLogger().warning("Someone clicked on a minion, but it's not loaded! " + event.getRightClicked().getLocation());
                 return;
             }
-            if (minion.getOwnerName().equalsIgnoreCase(event.getPlayer().getName())) {
+            if (minion.getOwnerName() != null && minion.getOwnerName().equalsIgnoreCase(event.getPlayer().getName())) {
                 new MinionInventory(plugin, event.getPlayer(), minion, "Minion", 5);
             } else {
                 event.getPlayer().sendMessage(ChatColor.RED + "To nie twój minion!");
@@ -130,10 +133,14 @@ public class MinionManager extends BukkitRunnable implements Listener {
     public void onMinionPlace(BlockPlaceEvent event) {
         if (event.isCancelled()) return;
 
+
         ItemStack item = event.getItemInHand().clone();
         if (!isMinion(item)) return;
-
         event.setCancelled(true);
+
+        if (event.getBlock().getY() - 1 != event.getBlockAgainst().getY()) {
+            return;
+        }
 
         Player player = event.getPlayer();
         if (canPlaceMinion(player)) {
@@ -205,14 +212,11 @@ public class MinionManager extends BukkitRunnable implements Listener {
     }
 
     private void loadIfMinion(Entity entity) {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            if (isMinion(entity)
-                    && minions.stream().noneMatch((minion -> minion.getMinion().equals(entity)
-            ))) {
-                minions.add(new Minion(plugin, (ArmorStand) entity));
-            }
-        });
-
+        if (isMinion(entity)
+                && minions.stream().noneMatch((minion -> minion.getMinion().equals(entity)
+        ))) {
+            minions.add(new Minion(plugin, (ArmorStand) entity));
+        }
     }
 
 

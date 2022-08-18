@@ -13,8 +13,8 @@ public class DontDropMinionBlocks implements Listener  {
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
         if (block.getType() == Material.AMETHYST_BLOCK) {
-            if (!block.getLocation().getNearbyEntitiesByType(ArmorStand.class, 2).isEmpty()) {
-                event.setDropItems(true);
+            if (!block.getLocation().getNearbyEntitiesByType(ArmorStand.class, 3).isEmpty()) {
+                event.setDropItems(false);
             }
         }
     }

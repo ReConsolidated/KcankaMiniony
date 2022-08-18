@@ -10,6 +10,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
@@ -137,6 +138,10 @@ public class Minion {
 
     // This is ran every tick
     public void run() {
+        if (!isAnyPlayerNearby()) {
+            return;
+        }
+
         doJobIn = Math.max(0, doJobIn - 1);
         if (doJobIn == 0 && nextJob != null) {
             if (currentPhase == BREAKING) {
@@ -184,6 +189,15 @@ public class Minion {
                 currentPhase = PLACING;
             }
         }
+    }
+
+    private boolean isAnyPlayerNearby() {
+        for (Player player : location.getWorld().getPlayers()) {
+            if (player.getLocation().distanceSquared(location) <= 30 * 30) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public ItemStack destroyAndGetItemStack() {
